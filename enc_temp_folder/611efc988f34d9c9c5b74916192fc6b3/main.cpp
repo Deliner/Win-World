@@ -41,7 +41,6 @@ struct ent_data
 public:
 	Entity* ent_ptr;
 	ent_data* next;
-	ent_data* prev;
 /*	~ent_data()
 	{
 		delete ent_ptr;
