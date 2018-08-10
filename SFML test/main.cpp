@@ -56,6 +56,7 @@ public:
 	ent_data* find(Entity* ptr);
 	ent_data* find_prev(Entity* ptr);
 	ent_data* r_first();
+	Entity* xy_find(int x, int y);
 };
 
 
@@ -132,11 +133,23 @@ private:
 	void botStat(Bot* ptr);
 	void entStat(Entity* ptr);
 	void entAdd();
+	void arr_shuffle(int arr[], int size, int shuffle);
+	void bot_mov(int x, int y, Bot* ptr);
+	void ent_rm(int x, int y);
 
+
+	int pos_check(int x, int y, Bot* ptr);
+
+	bool ent_check(int x);
+	bool bot_check(int x);
+	bool free_check(int x);
 
 	//Константы
+	static const int BOT_STEP_COST = 2;
 	static const int BOT = 1;
 	static const int ENT = 2;
+	static const int FREE = 0;
+	static const int ENERGY = 10;
 
 	static const int world_size_x = 100;
 	static const int world_size_y = 50;
@@ -150,7 +163,7 @@ private:
 	int cur_ent_id;
 	int step_arr[4] = { 1,2,3,4 };
 	
-	int arr[world_size_x];
+	int ent_spawn_arr[world_size_x];
 	int world_arr[world_size_y][world_size_x];
 	bot_list bot_arr;
 	ent_list ent_arr;
@@ -172,6 +185,28 @@ private:
 //////////////////////////////////////////////////////////////////////////////////
 
 
+
+
+Entity* ent_list::xy_find(int x, int y)
+{
+	ent_data* current;
+	current = r_first();
+
+	do
+	{
+		if ((current->ent_ptr->x == x) and (current->ent_ptr->y == y))
+		{
+			return current->ent_ptr;
+		}
+		else
+		{
+			current = current->next;
+		}
+	} while (current->next != NULL);
+
+	return NULL;	
+
+}
 
 ent_list::ent_list()
 {
@@ -217,7 +252,7 @@ ent_data* ent_list::find_prev(Entity* ptr)
 	return prev;
 }
 
-void ent_list::rm(Entity* ptr)
+void ent_list::rm(Entity* ptr) //Переделать
 {
 	ent_data* current;
 	current = find(ptr);
@@ -240,6 +275,7 @@ void ent_list::rm(Entity* ptr)
 	}
 
 }
+
 
 
 bot_list::bot_list()
@@ -383,7 +419,7 @@ World::World() : world_window(sf::VideoMode(int(world_size_x*bot_size*world_scal
 
 	for (int i = 0; i < world_size_x - 1; i++) //REMAKE
 	{
-		arr[i] = i + 1;
+		ent_spawn_arr[i] = i + 1;
 	}
 
 	//Добавляем первого бота и сущность
@@ -398,86 +434,170 @@ World::World() : world_window(sf::VideoMode(int(world_size_x*bot_size*world_scal
 
 }
 
+void World::ent_rm(int x, int y)
+{
+	world_arr[y][x] = FREE;
+	ent_arr.rm(ent_arr.xy_find(x, y));
+}
+
+void World::bot_mov(int x, int y, Bot* ptr)
+{
+	x += ptr->x;
+	y += ptr->y;
+
+	world_arr[ptr->y][ptr->x] = FREE;
+	world_arr[y][x] = BOT;
+	ptr->x = x;
+	ptr->y = y;
+}
+
+bool World::ent_check(int x)
+{
+	if (x == ENT)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool World::bot_check(int x)
+{
+	if (x == BOT)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool World::free_check(int x)
+{
+	if (x == FREE)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void World::arr_shuffle(int arr[], int size, int shuffle)
+{
+
+	srand(static_cast<int>(time(0)));
+
+	for (int i = 0; i < shuffle; i++)
+	{
+		int j, a, b;
+		a = rand() % size; //Переделать генератор
+		b = rand() % size;
+
+		j = arr[a];
+		arr[a] = arr[b];
+		arr[b] = j;
+	}
+
+}
+
+int World::pos_check(int x, int y, Bot* ptr)
+{
+	x += ptr->x;
+	y += ptr->y;
+
+	if (world_arr[y][x] == FREE) 
+	{
+		return FREE;
+	}
+	else if (world_arr[y][x] == BOT)
+	{
+		return BOT;
+	}
+	else
+	{
+		return ENT;
+	}
+}
+
+
 void World::botStat(Bot* ptr)
 {
-	ptr->energy -= 2;
+	//Уменьшаем энергию бота
+	ptr->energy -= BOT_STEP_COST;
 
+	//Проверяем бота на жизнеспособность
 	if (ptr->energy <= 0)
 	{
 		bot_arr.rm(ptr);
+		world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
 	}
 
-	//Генерируем проверку точек
-	srand(static_cast<int>(time(0)));
 
-	for (int i = 0; i < 32; i++)
+	//Перемешиваем массив проверки точек
+	arr_shuffle(step_arr, 4, 32);
+	bool free_pos;
+	free_pos = false;
+	int posx;
+	int posy;
+	posx = ptr->x;
+	posy = ptr->y;
+	//Начинаем перемещение и поглощение бота
+
+	//Проверяем по массиву есть ли рядом сущность
+	for (int i = 0; i < 4; i++)
 	{
-		int j, a, b;
-		a = rand() % 4; //Переделать генератор
-		b = rand() % 4;
 
-		j = step_arr[a];
-		step_arr[a] = step_arr[b];
-		step_arr[b] = j;
-	}
-
-	bool flag;
-	flag = false;
-	int direction;
-	int x;
-	int y;
-	x = ptr->x;
-	y = ptr->y;
-
-	for (int i = 0; i < 4; i++) //Добавить уничтожение травы и нормальное смещение
-	{
-		direction = step_arr[i];
-
-		switch (direction)
+		switch (step_arr[i])
 		{
 
 		case 1: //left
 
-			if ((world_arr[y][x - 1] == 0) or (world_arr[y][x - 1] == ENT))
+			if (ent_check(pos_check(posx, posy, ptr)))
 			{
-				ptr->x -= 1;
-				flag = true;
-				world_arr[y][x - 1] = BOT;
-				world_arr[y][x] = 0;
-
+				free_pos = true;
+				ptr->energy += ENERGY;
+				bot_mov(posx, 0, ptr);
+				ent_rm(posx, posy);
 			}
 			break;
 
 		case 2: //right
 
-			if ((world_arr[y][x + 1] == 0) or (world_arr[y][x + 1] == ENT))
+			if (ent_check(pos_check(1, 0, ptr)))
 			{
-				world_arr[y][x] = 0;
-				world_arr[y][x + 1] = BOT;
-				ptr->x += 1;
-				flag = true;
+				free_pos = true;
+				ptr->energy += ENERGY;
+				bot_mov(1, 0, ptr);
+				ent_rm(ptr->x - 1, ptr->y);
+
 			}
 			break;
 
 		case 3: //down
 
-			if ((world_arr[y + 1][x] == 0) or (world_arr[y - 1][x] == ENT))
+			if (ent_check(pos_check(0, 1, ptr)))
 			{
-				world_arr[y][x] = 0;
-				world_arr[y - 1][x] = BOT;
-				ptr->y -= 1;
-				flag = true;
+				free_pos = true;
+				ptr->energy += ENERGY;
+				bot_mov(0, 1, ptr);
+				ent_rm(ptr->x - 1, ptr->y);
 			}
 			break;
 
 		case 4: //up
 
-			if ((world_arr[y - 1][x] == 0) or (world_arr[y + 1][x] == ENT))
+			if (ent_check(pos_check(0, -1, ptr)))
 			{
-				world_arr[y][x] = 0;
-				world_arr[y + 1][x] = BOT;
-				flag = true;
-				ptr->y += 1;
+				free_pos = true;
+				ptr->energy += ENERGY;
+				bot_mov(0, -1, ptr);
+				ent_rm(ptr->x - 1, ptr->y);
+
 			}
 			break;
 
@@ -485,28 +605,81 @@ void World::botStat(Bot* ptr)
 			break;
 		}
 
-		if (flag)
+		if (free_pos)
 		{
 			break;
 		}
 	}
-}
+	//Проверяем есть ли рядом свободная точка
 
-void World::entStat(Entity* ptr)
-{
-	int x, y;
-	x = ptr->x;
-	y = ptr->y;
-	
-	
-	if ((y != world_size_y-1)&&(world_arr[y + 1][x] == 0))
+	if (!free_pos)
 	{
-		ptr->y += 1;
-		world_arr[y][x] = 0;
-		world_arr[y + 1][x] = ENT;
+		for (int i = 0; i < 4; i++)
+		{
+
+			switch (step_arr[i])
+			{
+
+			case 1: //left
+
+				if (free_check(pos_check(-1, 0, ptr)))
+				{
+					free_pos = true;
+					bot_mov(-1, 0, ptr);
+
+				}
+				break;
+
+			case 2: //right
+
+				if (free_check(pos_check(1, 0, ptr)))
+				{
+					free_pos = true;
+					bot_mov(1, 0, ptr);
+
+				}
+				break;
+
+			case 3: //down
+
+				if (free_check(pos_check(0, 1, ptr)))
+				{
+					free_pos = true;
+					bot_mov(0, 1, ptr);
+
+				}
+				break;
+
+			case 4: //up
+
+				if (free_check(pos_check(0, -1, ptr)))
+				{
+					free_pos = true;
+					bot_mov(0, -1, ptr);
+
+				}
+				break;
+
+			default:
+				break;
+			}
+
+			if (free_pos)
+			{
+				break;
+			}
+		}
+
+
+		//Проверяем на перебор энергии
+
+
+		//булевая функция возвращает тру если можно переместить бота на клетку
+		//Добавить уничтожение травы и нормальное смещение
+
+
 
 	}
-
 }
 
 void World::botStep()
@@ -530,6 +703,23 @@ void World::botStep()
 		botStat(current->bot_ptr);
 
 	} while (current->next != NULL);
+
+}
+
+void World::entStat(Entity* ptr)
+{
+	int x, y;
+	x = ptr->x;
+	y = ptr->y;
+	
+	
+	if ((y != world_size_y-1)&&(world_arr[y + 1][x] == 0))
+	{
+		ptr->y += 1;
+		world_arr[y][x] = 0;
+		world_arr[y + 1][x] = ENT;
+
+	}
 
 }
 
@@ -561,48 +751,34 @@ void World::entStep()
 
 void World::entAdd()
 {
-	srand(static_cast<int>(time(0)));
 
-	for (int i = 0; i < 10000; i++)
-	{
-		
-		int j, a, b;
-		j = 0;
-		a = 0;
-		b = 0;
-
-		
-		a = rand() % world_size_x; //Переделать генератор
-		b = rand() % world_size_x;
-
-		j = arr[a];
-		arr[a] = arr[b];
-		arr[b] = j;
-	}
+	//Перемешиваем точки спавна сущности
+	arr_shuffle(ent_spawn_arr, world_size_x, world_size_x*100);
 
 		
 	int i;
 	int j;
+	int pos;
 	i = 1;
 	j = 0;
+	pos = 0;
 
+	//Проверяем свободные точки для 2 сущностей и спауним их, если таких нет забиваем
 	while((i<world_size_x-1)&&(j<2))
 	{	
-		i++;
-		int x;
-		x = arr[i];
+		i++;		
+		pos = ent_spawn_arr[i];
 
-		if (world_arr[1][x] == 0)
+		if (world_arr[1][pos] == 0)
 		{
-			ent_arr.add(new Entity(x, 1 , bot_size*world_scale));
-			world_arr[1][x] = ENT;
+			ent_arr.add(new Entity(pos, 1 , bot_size*world_scale));
+			world_arr[1][pos] = ENT;
 			j++;
 		}
 		
 	}
 
 }
-
 
 void World::update()
 {
