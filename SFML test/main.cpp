@@ -600,7 +600,6 @@ void World::botStat(Bot* ptr)
 	bool alive = true;
 	bool full = false;
 	
-
 	//Уменьшаем энергию бота
 	ptr->energy -= BOT_STEP_COST;
 
@@ -615,86 +614,87 @@ void World::botStat(Bot* ptr)
 		ptr->energy += BOT_STEP_COST;
 	}
 
-
-	if (alive)
+	if (alive) //тут пытаемся создать нового бота
 	{
 		if (ptr->energy > ENERGY_FOR_SPAWN)
 		{
-
 			arr_shuffle(step_arr, 4, 32);
-			bool free_pos;
-			free_pos = false;
+
+			bool free_pos = false;
 			int posx;
 			int posy;
-			posx = ptr->x;
-			posy = ptr->y;
 
+			
 			for (int i = 0; i < 4; i++)
 			{
-				bool flag;
-				flag = true;
+				bool flag = true;
 				posx = ptr->x;
 				posy = ptr->y;
 
+
 				switch (step_arr[i])
 				{
-
 				case 1: //left
 
 					posx -= 1;
-					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
-					if (posx < 0) { posx = WORLD_SIZE_X - 1; }
+										
+					if (posx < 0) { posx = WORLD_SIZE_X - 1; } //для смещения через левую грань
+
 					if (((ent_check(pos_check(posx, posy))) or (free_check(pos_check(posx, posy)))) && flag)
 					{
 						if (ent_check(pos_check(posx, posy)))
 						{
 							ent_rm(posx, posy);
 						}
+
 						free_pos = true;
 						bot_add(posx, posy);
-
-
+						ptr->energy -= ENERGY_FOR_SPAWN / 4;
 					}
-
 					break;
 
 				case 2: //right
 
 					posx += 1;
-					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
-					if (posx > WORLD_SIZE_X - 1) { posx = 0; }
+					
+					if (posx > WORLD_SIZE_X - 1) { posx = 0; } //для смещения через правую грань
+
 					if (((ent_check(pos_check(posx, posy))) or (free_check(pos_check(posx, posy)))) && flag)
 					{
 						if (ent_check(pos_check(posx, posy)))
 						{
 							ent_rm(posx, posy);
 						}
+
 						free_pos = true;
 						bot_add(posx, posy);
+						ptr->energy -= ENERGY_FOR_SPAWN / 4;
 					}
-
 					break;
 
 				case 4: //down
 
 					posy += 1;
 					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+
 					if (((ent_check(pos_check(posx, posy))) or (free_check(pos_check(posx, posy)))) && flag)
 					{
 						if (ent_check(pos_check(posx, posy)))
 						{
 							ent_rm(posx, posy);
 						}
+
 						free_pos = true;
 						bot_add(posx, posy);
+						ptr->energy -= ENERGY_FOR_SPAWN / 4;
 					}
-
 					break;
 
 				case 3: //up
 
 					posy -= 1;
 					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+
 					if (((ent_check(pos_check(posx, posy))) or (free_check(pos_check(posx, posy)))) && flag)
 					{
 
@@ -702,14 +702,14 @@ void World::botStat(Bot* ptr)
 						{
 							ent_rm(posx, posy);
 						}
+
 						free_pos = true;
 						bot_add(posx, posy);
+						ptr->energy -= ENERGY_FOR_SPAWN / 4;
 					}
-
 					break;
 
 				default:
-
 					break;
 				}
 
@@ -722,52 +722,30 @@ void World::botStat(Bot* ptr)
 
 			/*if (!free_pos)
 			{
-			world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
-			bot_arr.rm(ptr);
-			alive = false;
-			std::cout << 'd' << std::endl;
-			}*/
-
-
+				УДАЛЯЕМ БОТА
+			}
+			*/
 		}
 	}
+	
 
-
-
-
-
-
-
-	if (alive)
+	if (alive) //пытаемся съесть сущность
 	{
-
-
-
-
-
-
-
-
-
-
 		//Перемешиваем массив проверки точек
 		arr_shuffle(step_arr, 4, 32);
-		bool free_pos;
-		free_pos = false;
+
+		bool free_pos = false;
 		int posx;
 		int posy;
-		posx = ptr->x;
-		posy = ptr->y;
-		//Начинаем перемещение и поглощение бота
-
+		
+	
 		//Проверяем по массиву есть ли рядом сущность
-
 		for (int i = 0; i < 4; i++)
 		{
-			bool flag;
-			flag = true;
+			bool flag = true;
 			posx = ptr->x;
 			posy = ptr->y;
+			
 
 			switch (step_arr[i])
 			{
@@ -775,7 +753,7 @@ void World::botStat(Bot* ptr)
 			case 1: //left
 
 				posx -= 1;
-				if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+				
 				if (posx < 0) { posx = WORLD_SIZE_X - 1; }
 				if ((ent_check(pos_check(posx, posy))) && flag)
 				{
@@ -784,13 +762,12 @@ void World::botStat(Bot* ptr)
 					ptr->energy += ENERGY_GAINED;
 					bot_mov(posx, posy, ptr);
 				}
-
 				break;
 
 			case 2: //right
 
 				posx += 1;
-				if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+				
 				if (posx > WORLD_SIZE_X - 1) { posx = 0; }
 				if ((ent_check(pos_check(posx, posy))) && flag)
 				{
@@ -799,12 +776,12 @@ void World::botStat(Bot* ptr)
 					ptr->energy += ENERGY_GAINED;
 					bot_mov(posx, posy, ptr);
 				}
-
 				break;
 
 			case 4: //down
 
 				posy += 1;
+
 				if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 				if ((ent_check(pos_check(posx, posy))) && flag)
 				{
@@ -813,26 +790,23 @@ void World::botStat(Bot* ptr)
 					ptr->energy += ENERGY_GAINED;
 					bot_mov(posx, posy, ptr);
 				}
-
 				break;
 
 			case 3: //up
 
 				posy -= 1;
+
 				if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 				if ((ent_check(pos_check(posx, posy))) && flag)
 				{
-
 					free_pos = true;
 					ent_rm(posx, posy);
 					ptr->energy += ENERGY_GAINED;
 					bot_mov(posx, posy, ptr);
 				}
-
 				break;
 
 			default:
-
 				break;
 			}
 
@@ -842,74 +816,75 @@ void World::botStat(Bot* ptr)
 			}
 		}
 
-		//Проверяем есть ли рядом свободная точка
-		if (!free_pos)
+		
+		if (!free_pos) //если рядом нет сущности
 		{
 			arr_shuffle(step_arr, 4, 32);
 
+
 			for (int i = 0; i < 4; i++)
 			{
+				bool flag = true;
 				posx = ptr->x;
 				posy = ptr->y;
-
-				bool flag;
-				flag = true;
+				 
 
 				switch (step_arr[i])
 				{
 
 				case 1: //left
-					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 
 					posx -= 1;
+
 					if (posx < 0) { posx = WORLD_SIZE_X - 1; }
+
 					if ((free_check(pos_check(posx, posy))) && flag)
 					{
 						free_pos = true;
 						bot_mov(posx, posy, ptr);
 					}
-
 					break;
 
 				case 2: //right
 
-					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 					posx += 1;
+
 					if (posx > WORLD_SIZE_X - 1) { posx = 0; }
+
 					if ((free_check(pos_check(posx, posy))) && flag)
 					{
 						free_pos = true;
 						bot_mov(posx, posy, ptr);
 					}
-
 					break;
 
 				case 4: //down
 
 					posy += 1;
+
 					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+
 					if ((free_check(pos_check(posx, posy))) && flag)
 					{
 						free_pos = true;
 						bot_mov(posx, posy, ptr);
 					}
-
 					break;
 
 				case 3: //up
 
 					posy -= 1;
+
 					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+
 					if ((free_check(pos_check(posx, posy))) && flag)
 					{
 						free_pos = true;
 						bot_mov(posx, posy, ptr);
 					}
-
 					break;
 
 				default:
-
 					break;
 				}
 
@@ -917,21 +892,9 @@ void World::botStat(Bot* ptr)
 				{
 					break;
 				}
-
-
 			}
-
-		}
-
-		//Проверяем на перебор энергии
-
-
-		//булевая функция возвращает тру если можно переместить бота на клетку
-		//Добавить уничтожение травы и нормальное смещение
-
-
+		}	
 	}
-
 }
 
 void World::entStep() //ПЕРЕДЕЛАТЬ ДЛЯ ПУСТОГО СПИСКА
