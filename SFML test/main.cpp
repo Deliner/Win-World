@@ -61,7 +61,7 @@ public:
 	void add(Entity* ptr);
 	void rm(Entity* ptr);
 	ent_data* find(Entity* ptr);
-	ent_data* find_prev(Entity* ptr);
+	//ent_data* find_prev(Entity* ptr);
 	ent_data* r_first();
 	Entity* xy_find(int x, int y);
 };
@@ -98,6 +98,7 @@ struct bot_data
 {
 	Bot* bot_ptr;
 	bot_data* next;
+	bot_data* prev;
 };
 
 class bot_list
@@ -112,7 +113,7 @@ public:
 	void add(Bot* ptr);
 	void rm(Bot* ptr);
 	bot_data* find(Bot* ptr);
-	bot_data* find_prev(Bot* ptr);
+	//bot_data* find_prev(Bot* ptr);
 	bot_data* r_first();
 
 };
@@ -158,9 +159,9 @@ private:
 	static const int FREE = 0;
 	static const int ENERGY = 10;
 
-	static const int world_size_x = 56;
-	static const int world_size_y = 40;
-	static const int world_scale = 8;
+	static const int world_size_x = 32;
+	static const int world_size_y = 24;
+	static const int world_scale = 4;
 	static const int bot_size = 2;
 
 	//Переменные
@@ -229,8 +230,24 @@ void ent_list::add(Entity* ptr)
 {
 	ent_data* newstruct = new ent_data;
 	newstruct->ent_ptr = ptr;
-	newstruct->next = first;
-	first = newstruct;
+	if (first == NULL)
+	{
+		newstruct->next = first;
+		first = newstruct;
+		newstruct->prev = NULL;
+
+	}
+	else
+	{
+		newstruct->next = first;
+		first = newstruct;
+		newstruct->prev = NULL;
+
+		newstruct->next->prev = newstruct;
+	}
+	
+	
+	
 }
 
 ent_data* ent_list::find(Entity* ptr)
@@ -246,6 +263,7 @@ ent_data* ent_list::find(Entity* ptr)
 	return current;
 }
 
+/*
 ent_data* ent_list::find_prev(Entity* ptr)
 {
 	ent_data* current;
@@ -258,9 +276,10 @@ ent_data* ent_list::find_prev(Entity* ptr)
 
 	return current;
 }
-
+*/
 void ent_list::rm(Entity* ptr) //Переделать во второй раз
 {
+	/*
 	ent_data* current;
 	current = find(ptr);
 	ent_data* prev;
@@ -278,6 +297,40 @@ void ent_list::rm(Entity* ptr) //Переделать во второй раз
 	else
 	{
 		first = current->next;
+		delete current->ent_ptr;
+		delete current;
+
+	}*/
+
+	ent_data* current;
+	current = find(ptr);
+	
+	if ((current == first) && (current->next == NULL))
+	{
+		delete current->ent_ptr;
+		delete current;
+		first = NULL;
+	}
+	else if ((current == first) && (current->next != NULL))
+	{
+		current->next->prev = NULL;
+		first = current->next;
+
+		delete current->ent_ptr;
+		delete current;
+	}
+	else if ((current != first) && (current->next == NULL))
+	{
+		current->prev->next = NULL;
+		
+		delete current->ent_ptr;
+		delete current;
+	}
+	else 
+	{
+		current->prev->next = current->next;
+		current->next->prev = current->prev;
+
 		delete current->ent_ptr;
 		delete current;
 
@@ -301,8 +354,21 @@ void bot_list::add(Bot* ptr)
 {
 	bot_data* newstruct = new bot_data;
 	newstruct->bot_ptr = ptr;
-	newstruct->next = first;
-	first = newstruct;
+	if (first == NULL)
+	{
+		newstruct->next = first;
+		first = newstruct;
+		newstruct->prev = NULL;
+
+	}
+	else
+	{
+		newstruct->next = first;
+		first = newstruct;
+		newstruct->prev = NULL;
+
+		newstruct->next->prev = newstruct;
+	}
 }
 
 bot_data* bot_list::find(Bot* ptr)
@@ -318,6 +384,7 @@ bot_data* bot_list::find(Bot* ptr)
 	return current;
 }
 
+/*
 bot_data* bot_list::find_prev(Bot* ptr)
 {
 	bot_data* prev;
@@ -333,28 +400,43 @@ bot_data* bot_list::find_prev(Bot* ptr)
 	
 	return prev;
 }
+*/
 
 void bot_list::rm(Bot* ptr) //ПРОВЕРИТЬ ДЕСТРУКТОР И НЕ РАБОТАЕТ С УДАЛЕНИЕ ПОСЛЕДНЕГО БОТА
 {
 	bot_data* current;
 	current = find(ptr);
-	bot_data* prev;
-	prev = find_prev(ptr);
 
-
-	if (prev != current)
+	if ((current == first) && (current->next == NULL))
 	{
-		delete ptr;
-		
-		prev->next = current->next;
+		delete current->bot_ptr;
+		delete current;
+		first = NULL;
+	}
+	else if ((current == first) && (current->next != NULL))
+	{
+		current->next->prev = NULL;
+		first = current->next;
+
+		delete current->bot_ptr;
+		delete current;
+	}
+	else if ((current != first) && (current->next == NULL))
+	{
+		current->prev->next = NULL;
+
+		delete current->bot_ptr;
 		delete current;
 	}
 	else
-	{	
-		
-		delete current;
-	}
+	{
+		current->prev->next = current->next;
+		current->next->prev = current->prev;
 
+		delete current->bot_ptr;
+		delete current;
+
+	}
 }
 
 Entity::Entity(int a, int b, int s) : x(a), y(b), shape(sf::Vector2f(s, s))
@@ -533,7 +615,9 @@ int World::pos_check(int x, int y)
 
 void World::botStat(Bot* ptr)
 {
-	/*
+	bool alive;
+	alive = true;
+
 	//Уменьшаем энергию бота
 	ptr->energy -= BOT_STEP_COST;
 
@@ -542,191 +626,194 @@ void World::botStat(Bot* ptr)
 	{	
 		world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
 		bot_arr.rm(ptr);
-		 
+		alive = false;
+		std::cout << 'd' << std::endl;
 	}
-*/
 
-	//Перемешиваем массив проверки точек
-	arr_shuffle(step_arr, 4, 32);
-	bool free_pos;
-	free_pos = false;
-	int posx;
-	int posy;
-	posx = ptr->x;
-	posy = ptr->y;
-	//Начинаем перемещение и поглощение бота
+	if (alive)
+	{
 
-	//Проверяем по массиву есть ли рядом сущность
-	
-	for (int i = 0; i < 4; i++)
-	{	
-		bool flag;
-		flag = true;
+		//Перемешиваем массив проверки точек
+		arr_shuffle(step_arr, 4, 32);
+		bool free_pos;
+		free_pos = false;
+		int posx;
+		int posy;
 		posx = ptr->x;
 		posy = ptr->y;
+		//Начинаем перемещение и поглощение бота
 
-		switch (step_arr[i])
-		{
-
-		case 1: //left
-
-			posx -= 1;
-			if ((posy > world_size_y - 1) || (posy<0)) { flag = false; break;  }
-			if (posx < 0) { posx = world_size_x-1; }
-			if ((ent_check(pos_check(posx, posy))) && flag)
-			{
-				free_pos = true;
-				ent_rm(posx, posy);
-				ptr->energy += ENERGY;
-				bot_mov(posx, posy, ptr);
-			}
-
-			break;
-
-		case 2: //right
-
-			posx += 1;
-			if ((posy > world_size_y - 1) || (posy<0)) { flag = false; break; }
-			if (posx > world_size_x-1) { posx = 0; }
-			if ((ent_check(pos_check(posx, posy))) && flag)
-			{
-				free_pos = true;
-				ent_rm(posx, posy);
-				ptr->energy += ENERGY;
-				bot_mov(posx, posy, ptr);
-			}
-
-			break;
-
-		case 3: //down
-
-			posy += 1;
-			if ((posy > world_size_y-1)||(posy<0)) { flag = false; break; }
-			if ((ent_check(pos_check(posx, posy))) && flag)
-			{
-				free_pos = true;
-				ent_rm(posx, posy);
-				ptr->energy += ENERGY;
-				bot_mov(posx, posy, ptr);
-			}
-
-			break;
-
-		case 4: //up
-
-			posy -= 1;
-			if ((posy > world_size_y - 1) || (posy<0)) { flag = false; break; }
-			if ((ent_check(pos_check(posx, posy)))&&flag)
-			{	
-				
-				free_pos = true;
-				ent_rm(posx, posy);
-				ptr->energy += ENERGY;
-				bot_mov(posx, posy, ptr);
-			}
-
-			break;
-
-		default:
-
-			break;
-		}
-
-		if (free_pos)
-		{
-			break;
-		}
-	}
-	
-	//Проверяем есть ли рядом свободная точка
-	if (!free_pos)
-	{
-		arr_shuffle(step_arr, 4, 32);
+		//Проверяем по массиву есть ли рядом сущность
 
 		for (int i = 0; i < 4; i++)
 		{
-		posx = ptr->x;
-		posy = ptr->y;
+			bool flag;
+			flag = true;
+			posx = ptr->x;
+			posy = ptr->y;
 
-		bool flag;
-		flag = true;
+			switch (step_arr[i])
+			{
 
-		switch (step_arr[i])
+			case 1: //left
+
+				posx -= 1;
+				if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+				if (posx < 0) { posx = world_size_x - 1; }
+				if ((ent_check(pos_check(posx, posy))) && flag)
+				{
+					free_pos = true;
+					ent_rm(posx, posy);
+					ptr->energy += ENERGY;
+					bot_mov(posx, posy, ptr);
+				}
+
+				break;
+
+			case 2: //right
+
+				posx += 1;
+				if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+				if (posx > world_size_x - 1) { posx = 0; }
+				if ((ent_check(pos_check(posx, posy))) && flag)
+				{
+					free_pos = true;
+					ent_rm(posx, posy);
+					ptr->energy += ENERGY;
+					bot_mov(posx, posy, ptr);
+				}
+
+				break;
+
+			case 3: //down
+
+				posy += 1;
+				if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+				if ((ent_check(pos_check(posx, posy))) && flag)
+				{
+					free_pos = true;
+					ent_rm(posx, posy);
+					ptr->energy += ENERGY;
+					bot_mov(posx, posy, ptr);
+				}
+
+				break;
+
+			case 4: //up
+
+				posy -= 1;
+				if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+				if ((ent_check(pos_check(posx, posy))) && flag)
+				{
+
+					free_pos = true;
+					ent_rm(posx, posy);
+					ptr->energy += ENERGY;
+					bot_mov(posx, posy, ptr);
+				}
+
+				break;
+
+			default:
+
+				break;
+			}
+
+			if (free_pos)
+			{
+				break;
+			}
+		}
+
+		//Проверяем есть ли рядом свободная точка
+		if (!free_pos)
 		{
+			arr_shuffle(step_arr, 4, 32);
 
-		case 1: //left
-			if ((posy > world_size_y - 1) || (posy<0)) { flag = false; break; }
-
-			posx -= 1;
-			if (posx < 0) { posx = world_size_x-1; }
-			if ((free_check(pos_check(posx, posy)))&&flag)
+			for (int i = 0; i < 4; i++)
 			{
-				free_pos = true;
-				bot_mov(posx, posy, ptr);
+				posx = ptr->x;
+				posy = ptr->y;
+
+				bool flag;
+				flag = true;
+
+				switch (step_arr[i])
+				{
+
+				case 1: //left
+					if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+
+					posx -= 1;
+					if (posx < 0) { posx = world_size_x - 1; }
+					if ((free_check(pos_check(posx, posy))) && flag)
+					{
+						free_pos = true;
+						bot_mov(posx, posy, ptr);
+					}
+
+					break;
+
+				case 2: //right
+
+					if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+					posx += 1;
+					if (posx > world_size_x - 1) { posx = 0; }
+					if ((free_check(pos_check(posx, posy))) && flag)
+					{
+						free_pos = true;
+						bot_mov(posx, posy, ptr);
+					}
+
+					break;
+
+				case 3: //down
+
+					posy += 1;
+					if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+					if ((free_check(pos_check(posx, posy))) && flag)
+					{
+						free_pos = true;
+						bot_mov(posx, posy, ptr);
+					}
+
+					break;
+
+				case 4: //up
+
+					posy -= 1;
+					if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+					if ((free_check(pos_check(posx, posy))) && flag)
+					{
+						free_pos = true;
+						bot_mov(posx, posy, ptr);
+					}
+
+					break;
+
+				default:
+
+					break;
+				}
+
+				if (free_pos)
+				{
+					break;
+				}
+
+
 			}
 
-			break;
-
-		case 2: //right
-
-			if ((posy > world_size_y - 1) || (posy<0)) { flag = false; break; }
-			posx += 1;
-			if (posx > world_size_x-1) { posx = 0; }
-			if ((free_check(pos_check(posx, posy))) && flag)
-			{
-				free_pos = true;
-				bot_mov(posx, posy, ptr);
-			}
-
-			break;
-
-		case 3: //down
-
-			posy += 1;
-			if ((posy > world_size_y - 1) || (posy<0)) { flag = false; break; }
-			if ((free_check(pos_check(posx, posy))) && flag)
-			{
-				free_pos = true;
-				bot_mov(posx, posy, ptr);
-			}
-
-			break;
-
-		case 4: //up
-
-			posy -= 1;
-			if ((posy > world_size_y - 1) || (posy<0)) { flag = false; break; }
-			if ((free_check(pos_check(posx, posy))) && flag)
-			{
-				free_pos = true;
-				bot_mov(posx, posy, ptr);
-			}
-
-			break;
-
-		default:
-
-			break;
 		}
 
-		if (free_pos)
-		{
-			break;
-		}
-	
+		//Проверяем на перебор энергии
 
-		}
+
+		//булевая функция возвращает тру если можно переместить бота на клетку
+		//Добавить уничтожение травы и нормальное смещение
+
 
 	}
-		
-	//Проверяем на перебор энергии
-
-
-	//булевая функция возвращает тру если можно переместить бота на клетку
-	//Добавить уничтожение травы и нормальное смещение
-
-
-
 	
 }
 
@@ -734,10 +821,11 @@ void World::botStep() //НЕ РАБОТАЕТ КОДА НЕТ БОТОВ
 {
 	bot_data* current;
 	current = bot_arr.r_first();
+	/*
 	bool flag;
 	flag = true;
 
-	if ((current != NULL)or(current != NULL))
+	if (current != NULL)
 	{
 		do
 		{
@@ -750,14 +838,18 @@ void World::botStep() //НЕ РАБОТАЕТ КОДА НЕТ БОТОВ
 			{
 				current = current->next;
 			}
-
-			if ((current != NULL) or (current != NULL))
-			{
+			std::cout << '1' << std::endl;
 				botStat(current->bot_ptr);
-			}
-
+			
 		} while (current->next != NULL);
 	}
+	*/
+
+	if 
+
+
+
+
 }
 
 void World::entStat(Entity* ptr)
@@ -843,6 +935,7 @@ void World::update()
 	
 	
 	botStep();
+	std::cout << '3' << std::endl;
 		
 		
 }
