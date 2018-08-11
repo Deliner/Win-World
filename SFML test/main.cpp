@@ -1,133 +1,132 @@
 #include <iostream>
 #include <stdlib.h>
-#include <time.h>
-//#include <windows.h>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/System.hpp>
 
 
-
+//Объект сущность, на деле является едой для бота
 class Entity : public sf::Drawable
 {
 private:
-	//Данные
-	//Функции
-
+	
 public:
 	//Конструкторы
-	Entity();
-	Entity(int a, int b);
-	Entity(int a, int b, int s);
+	Entity(int posx, int posy, int size); //выставляет позиции и размер для отрисовки
 	Entity(const Entity&) = delete;
 	Entity& operator=(const Entity&) = delete;
 
 	//Функции
-	void step();
-	void s_id(int a);
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
 	//Данные
-	int x;
-	int y;
-	int energy;
-	int id;
-	sf::RectangleShape shape;
+	int x; //позиция по x
+	int y; //позиция по y
+
+	sf::RectangleShape shape; //прямоугольник для отрисовки
 };
 
+
+
+//Структура реализующая двунаправленный список из сущностей
 struct ent_data
 {
 public:
-	Entity* ent_ptr;
-	ent_data* next;
-	ent_data* prev;
-/*	~ent_data()
-	{
-		delete ent_ptr;
-		delete next;
-	}*/
+	Entity* ent_ptr; //указатель на сущность
+	ent_data* next; //указатель на след структуру
+	ent_data* prev; //указатель на пред структуру
 };
 
+
+
+//Класс для работы со списком сущностей
 class ent_list
 {
 private:
-	ent_data* first;
+	ent_data* first; //указывает на текущий первый элемент списка
+
 public:
 	//Конструктор
 	ent_list();
 
 	//Функции
-	void add(Entity* ptr);
-	void rm(Entity* ptr);
-	ent_data* find(Entity* ptr);
-	//ent_data* find_prev(Entity* ptr);
-	ent_data* r_first();
-	Entity* xy_find(int x, int y);
+	void add(Entity* ptr); //добавляет элемент в начало списка
+	void rm(Entity* ptr); //удаляет структуру и бота
+
+	ent_data* find(Entity* ptr); //находит структуру по указателю на сущность
+	ent_data* r_first(); //возвращает первый элемент списка
+
+	Entity* xy_find(int x, int y); //находит указатель на сущность по координатам
 };
 
 
+
+//Класс реализующий бота
 class Bot : public sf::Drawable
 {
 private:
 
-
-
 public:
 	//Конструкторы
-	Bot();
-	Bot(int a, int b);
-	Bot(int a, int b, int s);
+	Bot(int posx, int posy, int size); //выставляет позиции и размер для отрисовки
 	Bot(const Bot&) = delete;
 	Bot& operator=(const Bot&) = delete;
 
 	//Функции
-
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
 	//Данные
 	int x;
 	int y;
-	int color;
-	int id;
 	int energy;
+
 	sf::RectangleShape shape;
 };
 
+
+
+//Структура реализующая двунаправленный список ботов
 struct bot_data
 {
-	Bot* bot_ptr;
-	bot_data* next;
-	bot_data* prev;
+	Bot* bot_ptr; //указатель на бота
+	bot_data* next; //указатель на следующую структуру
+	bot_data* prev; //указатель на предыдущую
 };
 
+
+
+//Класс для работы со списком ботов
 class bot_list
 {
 private:
-	bot_data * first;
+	bot_data * first; //указатель на первый элемент
+
 public:
 	//Конструктор
 	bot_list();
 
 	//Функции
-	void add(Bot* ptr);
-	void rm(Bot* ptr);
-	bot_data* find(Bot* ptr);
-	//bot_data* find_prev(Bot* ptr);
-	bot_data* r_first();
+	void add(Bot* ptr); //добавляет бота в начало списка
+	void rm(Bot* ptr); //удаляет структуру и бота
+
+	bot_data* find(Bot* ptr); //находит структуру с нужным ботом
+	bot_data* r_first(); //возвращает первый элемент списка
 
 };
 
+
+
+//Главный класс мира
 class World
 {
 public:
-
-	//Конструктор	
-	World();
-	World(int sizex, int sizey, int scale, int botsize, int entspawn, int energy_spawn, int energy_gain, int stepcost, int botx, int boty);
+	//Конструкторы	
+	World(); //создает мир со стандартными параметрами
+	World(int sizex, int sizey, int scale, int botsize, int entspawn, int energy_spawn, int energy_gain, int stepcost, int botx, int boty); //создает мир с параметрами юзера
 
 	//Функции
-	void run();
+	void run(); //начинает игровой цикл
 
 private:
 
@@ -457,29 +456,9 @@ void bot_list::rm(Bot* ptr) //ПРОВЕРИТЬ ДЕСТРУКТОР И НЕ РАБОТАЕТ С УДАЛЕНИЕ ПОСЛ
 	}
 }
 
-Entity::Entity(int a, int b, int s) : x(a), y(b), shape(sf::Vector2f(s, s))
+Entity::Entity(int posx, int posy, int size) : x(posx), y(posy), shape(sf::Vector2f(size, size))
 {
 	shape.setFillColor(sf::Color::Blue);
-}
-
-Entity::Entity(int a, int b) : x(a), y(b), shape(sf::Vector2f(2, 2))
-{
-	shape.setFillColor(sf::Color::Blue);
-}
-
-Entity::Entity() : x(0), y(0), energy(10), shape(sf::Vector2f(2, 2))
-{
-	shape.setFillColor(sf::Color::Blue);
-}
-
-void  Entity::step()
-{
-	y++;
-}
-
-void Entity::s_id(int a)
-{
-	id = a;
 }
 
 void Entity::draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -554,12 +533,14 @@ world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y))
 
 
 World::World(int sizex, int sizey, int scale, int botsize, int entspawn, int energy_spawn, int energy_gain, int stepcost, int botx, int boty):
-bot_num(0), ent_num(0), cur_bot_id(0), cur_ent_id(0), turn(0),
-WORLD_SCALE(scale), BOT_SIZE(botsize), ENT_NUM_SPAWN(entspawn), ENERGY_FOR_SPAWN(energy_spawn), ENERGY_GAINED(energy_gain), BOT_STEP_COST(stepcost), BOT_POS_X(botx), BOT_POS_Y(boty),
-WORLD_SIZE_X(((sizex<MAX_WORLD_SIZE_X)?sizex:MAX_WORLD_SIZE_X)), WORLD_SIZE_Y(((sizey<MAX_WORLD_SIZE_Y)?sizey:MAX_WORLD_SIZE_Y)), 
-world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y)), "The Wooooooorldo!!!")
-{
 
+bot_num(0), ent_num(0), cur_bot_id(0), cur_ent_id(0), turn(0), WORLD_SCALE(scale), BOT_SIZE(botsize),  ENERGY_FOR_SPAWN(energy_spawn),
+ENERGY_GAINED(energy_gain), BOT_STEP_COST(stepcost), WORLD_SIZE_X(((sizex<MAX_WORLD_SIZE_X)?sizex:MAX_WORLD_SIZE_X)),
+WORLD_SIZE_Y(((sizey<MAX_WORLD_SIZE_Y)?sizey:MAX_WORLD_SIZE_Y)), BOT_POS_X(((botx<WORLD_SIZE_X)?botx:WORLD_SIZE_X)),
+BOT_POS_Y(((boty<WORLD_SIZE_Y)?boty:WORLD_SIZE_Y)), ENT_NUM_SPAWN(((entspawn<WORLD_SIZE_X)?entspawn:WORLD_SIZE_X)),
+world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y)), "The Wooooooorldo!!!")
+
+{
 	//Инициализация пустой карты мира
 	for (int i = 0; i < WORLD_SIZE_Y; i++)
 	{
@@ -576,19 +557,6 @@ world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y))
 
 	//Добавляем первого бота и сущность
 	bot_add(BOT_POS_X, BOT_POS_Y);
-
-
-	//bot_arr.add(new Bot(world_size_x/2, world_size_y-10, bot_size*world_scale));
-	//ent_arr.add(new Entity(world_size_x, 0, bot_size*world_scale));
-	//ent_arr.add(new Entity(int(world_size_x / 2 + 1), int(world_size_y / 2 + 1), bot_size*world_scale));
-	//ent_arr.add(new Entity(world_size_x, world_size_y, bot_size*world_scale));
-
-
-	//Дабавляем их на карту
-	//world_arr[world_size_y - 10][world_size_x / 2] = BOT;
-	//world_arr[world_size_y / 2 + 1][world_size_x / 2 + 1] = ENT;
-
-
 }
 
 int World::screen_size(int x)
