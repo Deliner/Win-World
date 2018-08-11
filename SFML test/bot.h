@@ -59,6 +59,11 @@ public:
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
 	//Данные
+	int pos_to_mov_x; //позиция к которой стремится бот по x
+	int pos_to_mov_y; //позиция к которой стремится бот по y
+	int steps; //сколько уже идет к позиции
+	bool follower; //является ли последователем
+	
 	int x; //позиция по x
 	int y; //позиция по y
 	int energy; //енергия
