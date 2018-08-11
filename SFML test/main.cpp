@@ -124,6 +124,7 @@ public:
 
 	//Конструктор	
 	World();
+	World(int sizex, int sizey, int scale, int botsize, int entspawn, int energy_spawn, int energy_gain, int stepcost, int botx, int boty);
 
 	//Функции
 	void run();
@@ -136,7 +137,7 @@ private:
 	void processEvents();
 	void all_bot_draw();
 	void all_ent_draw();
-	void botStep();
+	void botStep(bot_data* current);
 	void entStep();
 	void botStat(Bot* ptr);
 	void entStat(Entity* ptr);
@@ -144,41 +145,57 @@ private:
 	void arr_shuffle(int arr[], int size, int shuffle);
 	void bot_mov(int x, int y, Bot* ptr);
 	void ent_rm(int x, int y);
-
-
+	void bot_add(int x, int y);
+	void inf_print();
+	void inp_params();
 	int pos_check(int x, int y);
+	int screen_size(int x);
 
 	bool ent_check(int x);
 	bool bot_check(int x);
 	bool free_check(int x);
 
 	//Константы
-	static const int BOT_STEP_COST = 2;
+	
 	static const int BOT = 1;
 	static const int ENT = 2;
 	static const int FREE = 0;
-	static const int ENERGY = 10;
+	static const int MAX_WORLD_SIZE_X = 316;
+	static const int MAX_WORLD_SIZE_Y = 176;
 
-	static const int world_size_x = 32;
-	static const int world_size_y = 24;
-	static const int world_scale = 4;
-	static const int bot_size = 2;
-
+	
 	//Переменные
+	int ENERGY_GAINED;
+	int BOT_STEP_COST;	
+	int WORLD_SCALE;
+	int BOT_SIZE;
+	int ENT_NUM_SPAWN;
+	int ENERGY_FOR_SPAWN;
+	int BOT_POS_X;
+	int BOT_POS_Y;
+	int WORLD_SIZE_X;
+	int WORLD_SIZE_Y;
+
+	//найти максимальный размер мира с таким разрешением
+
+	
+	
+
+	int turn;
 	int bot_num;
 	int ent_num;
 	int cur_bot_id;
 	int cur_ent_id;
 	int step_arr[4] = { 1,2,3,4 };
 	
-	int ent_spawn_arr[world_size_x];
-	int world_arr[world_size_y][world_size_x];
+	int ent_spawn_arr[MAX_WORLD_SIZE_X];
+	int world_arr[MAX_WORLD_SIZE_Y][MAX_WORLD_SIZE_X];
 	bot_list bot_arr;
 	ent_list ent_arr;
 	Bot* bot_ptr;
 	Entity* ent_ptr;
 
-	sf::Clock clock;
+	sf::Clock main_clock;
 	sf::RenderWindow world_window;
 };
 
@@ -354,11 +371,12 @@ void bot_list::add(Bot* ptr)
 {
 	bot_data* newstruct = new bot_data;
 	newstruct->bot_ptr = ptr;
+
 	if (first == NULL)
 	{
-		newstruct->next = first;
+		newstruct->next = NULL;
 		first = newstruct;
-		newstruct->prev = NULL;
+		first->prev = NULL;
 
 	}
 	else
@@ -496,40 +514,108 @@ void Bot::draw(sf::RenderTarget& target, sf::RenderStates states) const
 }
 
 
-World::World() : world_window(sf::VideoMode(int(world_size_x*bot_size*world_scale*1.5+bot_size*world_scale), int(world_size_y*bot_size*world_scale*1.5+bot_size * world_scale)), "The Wooooooorldo!!!"), bot_num(0), ent_num(0), cur_bot_id(0), cur_ent_id(0)
+World::World() : bot_num(0), ent_num(0), cur_bot_id(0), cur_ent_id(0), turn(0), WORLD_SCALE(2), BOT_SIZE(2),
+ENT_NUM_SPAWN(4), ENERGY_FOR_SPAWN(100), ENERGY_GAINED(10), BOT_STEP_COST(2), BOT_POS_X(150), BOT_POS_Y(78), WORLD_SIZE_X(300), WORLD_SIZE_Y(156),
+world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y)), "The Wooooooorldo!!!")
 {
+	
 	//Инициализация пустой карты мира
-	for (int i = 0; i < world_size_y; i++)
+	for (int i = 0; i < WORLD_SIZE_Y; i++)
 	{
-		for (int j = 0; j < world_size_x; j++)
+		for (int j = 0; j < WORLD_SIZE_X; j++)
 		{
 			world_arr[i][j] = 0;
 		}
 	}
 
-	for (int i = 0; i < world_size_x; i++) //REMAKE
+	for (int i = 0; i < WORLD_SIZE_X; i++) //REMAKE
 	{
 		ent_spawn_arr[i] = i;
 	}
 
 	//Добавляем первого бота и сущность
-	bot_arr.add(new Bot(int(10), int(10), bot_size*world_scale));
+	bot_add(WORLD_SIZE_X / 2, WORLD_SIZE_Y / 2);
+
+
+	//bot_arr.add(new Bot(world_size_x/2, world_size_y-10, bot_size*world_scale));
 	//ent_arr.add(new Entity(world_size_x, 0, bot_size*world_scale));
 	//ent_arr.add(new Entity(int(world_size_x / 2 + 1), int(world_size_y / 2 + 1), bot_size*world_scale));
 	//ent_arr.add(new Entity(world_size_x, world_size_y, bot_size*world_scale));
 	
 
 	//Дабавляем их на карту
-	world_arr[10][10] = BOT;
+	//world_arr[world_size_y - 10][world_size_x / 2] = BOT;
 	//world_arr[world_size_y / 2 + 1][world_size_x / 2 + 1] = ENT;
 
 
+}
+
+
+
+
+World::World(int sizex, int sizey, int scale, int botsize, int entspawn, int energy_spawn, int energy_gain, int stepcost, int botx, int boty):
+bot_num(0), ent_num(0), cur_bot_id(0), cur_ent_id(0), turn(0),
+WORLD_SCALE(scale), BOT_SIZE(botsize), ENT_NUM_SPAWN(entspawn), ENERGY_FOR_SPAWN(energy_spawn), ENERGY_GAINED(energy_gain), BOT_STEP_COST(stepcost), BOT_POS_X(botx), BOT_POS_Y(boty),
+WORLD_SIZE_X(((sizex<MAX_WORLD_SIZE_X)?sizex:MAX_WORLD_SIZE_X)), WORLD_SIZE_Y(((sizey<MAX_WORLD_SIZE_Y)?sizey:MAX_WORLD_SIZE_Y)), 
+world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y)), "The Wooooooorldo!!!")
+{
+
+	//Инициализация пустой карты мира
+	for (int i = 0; i < WORLD_SIZE_Y; i++)
+	{
+		for (int j = 0; j < WORLD_SIZE_X; j++)
+		{
+			world_arr[i][j] = 0;
+		}
+	}
+
+	for (int i = 0; i < WORLD_SIZE_X; i++) //REMAKE
+	{
+		ent_spawn_arr[i] = i;
+	}
+
+	//Добавляем первого бота и сущность
+	bot_add(BOT_POS_X, BOT_POS_Y);
+
+
+	//bot_arr.add(new Bot(world_size_x/2, world_size_y-10, bot_size*world_scale));
+	//ent_arr.add(new Entity(world_size_x, 0, bot_size*world_scale));
+	//ent_arr.add(new Entity(int(world_size_x / 2 + 1), int(world_size_y / 2 + 1), bot_size*world_scale));
+	//ent_arr.add(new Entity(world_size_x, world_size_y, bot_size*world_scale));
+
+
+	//Дабавляем их на карту
+	//world_arr[world_size_y - 10][world_size_x / 2] = BOT;
+	//world_arr[world_size_y / 2 + 1][world_size_x / 2 + 1] = ENT;
+
+
+}
+
+int World::screen_size(int x)
+{
+
+	x = static_cast<int>(x*BOT_SIZE*WORLD_SCALE*1.5);
+
+	return x;
+}
+
+void World::inf_print()
+{
+	std::cout << "Current turn is " << turn << std::endl << "Bot number is " << bot_num << std::endl << "Ent number is " << ent_num << std::endl << std::endl << std::endl;
+}
+
+void World::bot_add(int x, int y)
+{
+	world_arr[y][x] = BOT;
+	bot_arr.add(new Bot(x, y, BOT_SIZE*WORLD_SCALE));
+	bot_num++;
 }
 
 void World::ent_rm(int x, int y)
 {
 	world_arr[y][x] = FREE;
 	ent_arr.rm(ent_arr.xy_find(x, y));
+	ent_num--;
 }
 
 void World::bot_mov(int x, int y, Bot* ptr)
@@ -581,19 +667,20 @@ bool World::free_check(int x)
 void World::arr_shuffle(int arr[], int size, int shuffle)
 {
 
-	srand(static_cast<int>(time(0)));
+	srand(static_cast<int>(main_clock.getElapsedTime().asSeconds()));
 
 	for (int i = 0; i < shuffle; i++)
 	{
 		int j, a, b;
-		a = rand() % size; //Переделать генератор
-		b = rand() % size;
+		
+		a = rand() % (size);	
+		b = rand() % (size);
 
 		j = arr[a];
 		arr[a] = arr[b];
 		arr[b] = j;
 	}
-
+	
 }
 
 int World::pos_check(int x, int y)
@@ -618,20 +705,156 @@ void World::botStat(Bot* ptr)
 	bool alive;
 	alive = true;
 
+	bool full;
+	full = false;
 	//Уменьшаем энергию бота
 	ptr->energy -= BOT_STEP_COST;
 
 	//Проверяем бота на жизнеспособность
 	if (ptr->energy <= 0)
 	{	
-		world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
+		/*world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
 		bot_arr.rm(ptr);
 		alive = false;
-		std::cout << 'd' << std::endl;
+		std::cout << 'd' << std::endl;*/
+
+		ptr->energy += BOT_STEP_COST;
 	}
+	
 
 	if (alive)
 	{
+		if (ptr->energy > ENERGY_FOR_SPAWN)
+		{
+
+			arr_shuffle(step_arr, 4, 32);
+			bool free_pos;
+			free_pos = false;
+			int posx;
+			int posy;
+			posx = ptr->x;
+			posy = ptr->y;
+
+			for (int i = 0; i < 4; i++)
+			{
+				bool flag;
+				flag = true;
+				posx = ptr->x;
+				posy = ptr->y;
+
+				switch (step_arr[i])
+				{
+
+				case 1: //left
+
+					posx -= 1;
+					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+					if (posx < 0) { posx = WORLD_SIZE_X - 1; }
+					if (((ent_check(pos_check(posx, posy)))or(free_check(pos_check(posx,posy))))&& flag)
+					{	
+						if (ent_check(pos_check(posx, posy)))
+						{
+							ent_rm(posx, posy);
+						}
+						free_pos = true;
+						bot_add(posx, posy);
+					
+						
+					}
+
+					break;
+
+				case 2: //right
+
+					posx += 1;
+					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+					if (posx > WORLD_SIZE_X - 1) { posx = 0; }
+					if (((ent_check(pos_check(posx, posy))) or (free_check(pos_check(posx, posy)))) && flag)
+					{
+						if (ent_check(pos_check(posx, posy)))
+						{
+							ent_rm(posx, posy);
+						}
+						free_pos = true;
+						bot_add(posx, posy);
+					}
+
+					break;
+
+				case 4: //down
+
+					posy += 1;
+					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+					if (((ent_check(pos_check(posx, posy))) or (free_check(pos_check(posx, posy)))) && flag)
+					{
+						if (ent_check(pos_check(posx, posy)))
+						{
+							ent_rm(posx, posy);
+						}
+						free_pos = true;
+						bot_add(posx, posy);
+					}
+
+					break;
+
+				case 3: //up
+
+					posy -= 1;
+					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+					if (((ent_check(pos_check(posx, posy))) or (free_check(pos_check(posx, posy)))) && flag)
+					{
+
+						if (ent_check(pos_check(posx, posy)))
+						{
+							ent_rm(posx, posy);
+						}
+						free_pos = true;
+						bot_add(posx, posy);
+					}
+
+					break;
+
+				default:
+
+					break;
+				}
+
+				if (free_pos)
+				{
+					break;
+				}
+			}
+
+
+			/*if (!free_pos)
+			{
+				world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
+				bot_arr.rm(ptr);
+				alive = false;
+				std::cout << 'd' << std::endl;
+			}*/
+
+
+		}
+	}
+
+
+
+
+
+
+
+	if (alive)
+	{
+
+		
+
+		
+
+
+
+
+
 
 		//Перемешиваем массив проверки точек
 		arr_shuffle(step_arr, 4, 32);
@@ -658,13 +881,13 @@ void World::botStat(Bot* ptr)
 			case 1: //left
 
 				posx -= 1;
-				if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
-				if (posx < 0) { posx = world_size_x - 1; }
+				if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+				if (posx < 0) { posx = WORLD_SIZE_X - 1; }
 				if ((ent_check(pos_check(posx, posy))) && flag)
 				{
 					free_pos = true;
 					ent_rm(posx, posy);
-					ptr->energy += ENERGY;
+					ptr->energy += ENERGY_GAINED;
 					bot_mov(posx, posy, ptr);
 				}
 
@@ -673,42 +896,42 @@ void World::botStat(Bot* ptr)
 			case 2: //right
 
 				posx += 1;
-				if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
-				if (posx > world_size_x - 1) { posx = 0; }
+				if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
+				if (posx > WORLD_SIZE_X - 1) { posx = 0; }
 				if ((ent_check(pos_check(posx, posy))) && flag)
 				{
 					free_pos = true;
 					ent_rm(posx, posy);
-					ptr->energy += ENERGY;
+					ptr->energy += ENERGY_GAINED;
 					bot_mov(posx, posy, ptr);
 				}
 
 				break;
 
-			case 3: //down
+			case 4: //down
 
 				posy += 1;
-				if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+				if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 				if ((ent_check(pos_check(posx, posy))) && flag)
 				{
 					free_pos = true;
 					ent_rm(posx, posy);
-					ptr->energy += ENERGY;
+					ptr->energy += ENERGY_GAINED;
 					bot_mov(posx, posy, ptr);
 				}
 
 				break;
 
-			case 4: //up
+			case 3: //up
 
 				posy -= 1;
-				if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+				if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 				if ((ent_check(pos_check(posx, posy))) && flag)
 				{
 
 					free_pos = true;
 					ent_rm(posx, posy);
-					ptr->energy += ENERGY;
+					ptr->energy += ENERGY_GAINED;
 					bot_mov(posx, posy, ptr);
 				}
 
@@ -742,10 +965,10 @@ void World::botStat(Bot* ptr)
 				{
 
 				case 1: //left
-					if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 
 					posx -= 1;
-					if (posx < 0) { posx = world_size_x - 1; }
+					if (posx < 0) { posx = WORLD_SIZE_X - 1; }
 					if ((free_check(pos_check(posx, posy))) && flag)
 					{
 						free_pos = true;
@@ -756,9 +979,9 @@ void World::botStat(Bot* ptr)
 
 				case 2: //right
 
-					if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 					posx += 1;
-					if (posx > world_size_x - 1) { posx = 0; }
+					if (posx > WORLD_SIZE_X - 1) { posx = 0; }
 					if ((free_check(pos_check(posx, posy))) && flag)
 					{
 						free_pos = true;
@@ -767,10 +990,10 @@ void World::botStat(Bot* ptr)
 
 					break;
 
-				case 3: //down
+				case 4: //down
 
 					posy += 1;
-					if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 					if ((free_check(pos_check(posx, posy))) && flag)
 					{
 						free_pos = true;
@@ -779,10 +1002,10 @@ void World::botStat(Bot* ptr)
 
 					break;
 
-				case 4: //up
+				case 3: //up
 
 					posy -= 1;
-					if ((posy > world_size_y - 1) || (posy < 0)) { flag = false; break; }
+					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 					if ((free_check(pos_check(posx, posy))) && flag)
 					{
 						free_pos = true;
@@ -817,11 +1040,11 @@ void World::botStat(Bot* ptr)
 	
 }
 
-void World::botStep() //НЕ РАБОТАЕТ КОДА НЕТ БОТОВ
+void World::botStep(bot_data* current) //НЕ РАБОТАЕТ КОДА НЕТ БОТОВ
 {
-	bot_data* current;
-	current = bot_arr.r_first();
-	/*
+	
+	//bot_data* current;
+	//current = bot_arr.r_first();
 	bool flag;
 	flag = true;
 
@@ -838,18 +1061,27 @@ void World::botStep() //НЕ РАБОТАЕТ КОДА НЕТ БОТОВ
 			{
 				current = current->next;
 			}
-			std::cout << '1' << std::endl;
+			//std::cout << '1' << std::endl;
 				botStat(current->bot_ptr);
 			
 		} while (current->next != NULL);
 	}
+	
+
+	/*if ((current!=NULL)&&(current->next != NULL))
+	{
+		botStep(current->next);
+		
+	}
+	else
+	{	
+		if (current != NULL)
+		{
+			botStat(current->bot_ptr);
+		}
+		
+	}
 	*/
-
-	if 
-
-
-
-
 }
 
 void World::entStat(Entity* ptr)
@@ -859,7 +1091,7 @@ void World::entStat(Entity* ptr)
 	y = ptr->y;
 	
 		
-	if ((y != world_size_y-1)&&(free_check(pos_check(x,y+1))))
+	if ((y != WORLD_SIZE_Y-1)&&(free_check(pos_check(x,y+1))))
 	{
 		ptr->y += 1;
 		world_arr[y][x] = FREE;
@@ -901,7 +1133,7 @@ void World::entAdd()
 {
 
 	//Перемешиваем точки спавна сущности
-	arr_shuffle(ent_spawn_arr, world_size_x, world_size_x*100);
+	arr_shuffle(ent_spawn_arr, WORLD_SIZE_X, WORLD_SIZE_X*100);
 
 		
 	int i;
@@ -912,16 +1144,17 @@ void World::entAdd()
 	pos = 0;
 
 	//Проверяем свободные точки для 2 сущностей и спауним их, если таких нет забиваем
-	while((i<world_size_x)&&(j<2))
+	while((i<WORLD_SIZE_X)&&(j<ENT_NUM_SPAWN))
 	{	
 		i++;		
 		pos = ent_spawn_arr[i];
 
 		if (free_check(pos_check(pos,0)))
 		{
-			ent_arr.add(new Entity(pos, 0 , bot_size*world_scale));
+			ent_arr.add(new Entity(pos, 0 , BOT_SIZE*WORLD_SCALE));
 			world_arr[0][pos] = ENT;
 			j++;
+			ent_num++;
 		}
 		
 	}
@@ -934,8 +1167,8 @@ void World::update()
 	entStep();
 	
 	
-	botStep();
-	std::cout << '3' << std::endl;
+	botStep(bot_arr.r_first());
+	//std::cout << '3' << std::endl; //DELETE
 		
 		
 }
@@ -958,7 +1191,7 @@ void World::all_bot_draw()
 			{
 				current = current->next;
 			}
-			(*(current->bot_ptr)).shape.setPosition(int(((*(current->bot_ptr)).x)*bot_size*world_scale*1.5), int(((*(current->bot_ptr)).y)*bot_size*world_scale*1.5));
+			(*(current->bot_ptr)).shape.setPosition(int(((*(current->bot_ptr)).x)*BOT_SIZE*WORLD_SCALE*1.5), int(((*(current->bot_ptr)).y)*BOT_SIZE*WORLD_SCALE*1.5));
 			world_window.draw(*(current->bot_ptr));
 			//std::cout << current->bot_ptr->x << " " << current->bot_ptr->y << std::endl; //DELETE
 		} while (current->next != NULL);
@@ -984,7 +1217,7 @@ void World::all_ent_draw()
 			{
 				current = current->next;
 			}
-			(*(current->ent_ptr)).shape.setPosition(int(((*(current->ent_ptr)).x)*bot_size*world_scale)*1.5, int(((*(current->ent_ptr)).y)*bot_size*world_scale*1.5));
+			(*(current->ent_ptr)).shape.setPosition(int(((*(current->ent_ptr)).x)*BOT_SIZE*WORLD_SCALE)*1.5, int(((*(current->ent_ptr)).y)*BOT_SIZE*WORLD_SCALE*1.5));
 			//std::cout << current->ent_ptr->x << " " << current->ent_ptr->y << std::endl; //DELETE
 			world_window.draw(*(current->ent_ptr));
 		} while (current->next != NULL);
@@ -1016,15 +1249,12 @@ void World::processEvents()
 void World::run()
 {
 	while (world_window.isOpen())
-	{
+	{	
+		turn++;
 		processEvents();
 		update();
 		render();
-
-		std::cout << "Cicle\n"; //DELETE
-
-		clock.restart();
-		while (clock.getElapsedTime().asMicroseconds() < 50000) {}
+		inf_print();
 	}
 }
 
@@ -1033,8 +1263,78 @@ void World::run()
 int main()
 {
 
-	World world;
-	world.run();
+	std::cout << std::endl << "Hey!!! My name is Del O'Ner, and it's my small world simulation.\n"
+		<< "The RED scuare is called BOT, it can move up, down, left and right. The BLUE one is its food.\n"
+		<< "BOT can destroy it and gain energy. Also u can change some params of this world.\n"
+		<< "So have fun and good luck... And be carefull it non optimized =)\n";
+
+	
+
+		bool repeat;
+		repeat = false;
+	while(!repeat)
+	{		
+		
+		char answ;
+		World* main;
+
+		do
+		{
+			std::cout << std::endl << "Do u whant to change standart parameters? (y/n) ";
+			std::cin >> answ;
+		} while (!((answ == 'y') || (answ == 'n')));
+
+		if (answ == 'n')
+		{
+			main = new World;
+			main->run();
+		}
+
+		else
+		{
+			int sizex;
+			int sizey;
+			int scale;
+			int botsize;
+			int entspawn;
+			int energy_spawn;
+			int energy_gain;
+			int stepcost;
+			int botx;
+			int boty;
+
+			std::cout << std::endl << "Ok, here is standart parametrs: \n";
+			std::cout << "WORLD_SIZE_X = 300 "; std::cout << "\nInput yours: "; std::cin >> sizex; std::cout << std::endl;
+			std::cout << "WORLD_SIZE_Y = 156 "; std::cout << "\nInput yours: "; std::cin >> sizey; std::cout << std::endl;
+			std::cout << "WORLD_SCALE = 2 "; std::cout << "\nInput yours: "; std::cin >> scale; std::cout << std::endl;
+			std::cout << "BOT_SIZE = 2 "; std::cout << "\nInput yours: "; std::cin >> botsize; std::cout << std::endl;
+			std::cout << "ENT_NUM_SPAWN = 4 "; std::cout << "\nInput yours: "; std::cin >> entspawn; std::cout << std::endl;
+			std::cout << "ENERGY_FOR_SPAWN = 100 "; std::cout << "\nInput yours: "; std::cin >> energy_spawn; std::cout << std::endl;
+			std::cout << "ENERGY_GAINED  = 10 "; std::cout << "\nInput yours: "; std::cin >> energy_gain; std::cout << std::endl;
+			std::cout << "BOT_STEP_COST = 2 "; std::cout << "\nInput yours: "; std::cin >> stepcost; std::cout << std::endl;
+			std::cout << "BOT_POS_X  = 150 "; std::cout << "\nInput yours: "; std::cin >> botx; std::cout << std::endl;
+			std::cout << "BOT_POS_Y = 78 "; std::cout << "\nInput yours: "; std::cin >> boty; std::cout << std::endl;
+			
+			main = new World(sizex, sizey, scale, botsize, entspawn, energy_spawn, energy_gain, stepcost, botx, boty);
+			main->run();
+		}
+		
+	
+		do
+		{	std::cout << "Would u like to repeat simulation? (y/n) ";
+			std::cin >> answ;			
+		}	while (!((answ == 'y') || (answ == 'n')));
+
+		if (answ == 'y')
+		{
+			repeat = false;
+		}
+		else
+		{
+			repeat = true;
+		}
+
+	} 
 
 	return 0;
 }
