@@ -77,9 +77,9 @@ public:
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
 	//Данные
-	int x;
-	int y;
-	int energy;
+	int x; //позиция по x
+	int y; //позиция по y
+	int energy; //енергия
 
 	sf::RectangleShape shape;
 };
@@ -131,71 +131,66 @@ public:
 private:
 
 	//Функции
-	void render();
-	void update();
-	void processEvents();
-	void all_bot_draw();
-	void all_ent_draw();
-	void botStep(bot_data* current);
-	void entStep();
-	void botStat(Bot* ptr);
-	void entStat(Entity* ptr);
-	void entAdd();
-	void arr_shuffle(int arr[], int size, int shuffle);
-	void bot_mov(int x, int y, Bot* ptr);
-	void ent_rm(int x, int y);
-	void bot_add(int x, int y);
-	void inf_print();
-	void inp_params();
-	int pos_check(int x, int y);
-	int screen_size(int x);
+	void processEvents(); //проверяет на события 
 
-	bool ent_check(int x);
-	bool bot_check(int x);
-	bool free_check(int x);
+	void render(); //главная функция отвечающая за отображение
+	void all_bot_draw(); //отображает всех ботов
+	void all_ent_draw(); //отображает все сущности
 
-	//Константы
+	void update(); //обновляет состояние мира
+	void botStep(bot_data* current); //для каждого бота вызывает функцию перемещения
+	void botStat(Bot* ptr); //функция перемещения для бота	
+	void entStep(); //для каждой сущности вызывает функцию смещения	
+	void entStat(Entity* ptr); //функция смещения для сущности
+	void entSpawn(); //за каждый цикл генерирует новую сущность
 	
-	static const int BOT = 1;
-	static const int ENT = 2;
-	static const int FREE = 0;
-	static const int MAX_WORLD_SIZE_X = 316;
-	static const int MAX_WORLD_SIZE_Y = 176;
-
+	int pos_check(int x, int y); //проверяет позицию
+	bool ent_check(int x); //проверяет карту на сущность
+	bool bot_check(int x); //проверяет карту на бота
+	bool free_check(int x); //проверяет карту на свободное место
 	
+	void bot_mov(int x, int y, Bot* ptr); //плейсит бота
+	void ent_rm(int x, int y); //удаляет сущность
+	void bot_add(int x, int y); //добавляет бота
+	
+	void arr_shuffle(int arr[], int size, int shuffle); //переставляет элементы массива
+	int screen_size(int x); //фозвращает нужный размер экрана
+	void inf_print(); //выводит информацию за цикл
+
+	//Константы	
+	static const int BOT = 1; //Как отображать бота на карте
+	static const int ENT = 2; //Как отображать сущность на карте 
+	static const int FREE = 0; //Как отображать свободу на карте
+
+	static const int MAX_WORLD_SIZE_X = 316; //максимальный рамер экрана по горизонтали
+	static const int MAX_WORLD_SIZE_Y = 176; //максимальный размер экрана по вертикали
+	
+	//Переменные(константы), для задания пользователем
+	int ENERGY_GAINED; //сколько получать энергии за сущность
+	int BOT_STEP_COST;	//сколько энергии тратится при шаге
+	int SCREEN_SCALE; //увеличиваем размер экрана
+	int BOT_SIZE; //размер бота
+	int ENT_NUM_SPAWN; //сколько спаунится сущностей за цикл
+	int ENERGY_FOR_SPAWN; //сколько нужно энергии для спауна
+	int BOT_POS_X; //на какой позиции спаунить бота по x
+	int BOT_POS_Y; //на какой позиции спаунить бота по y
+	int WORLD_SIZE_X; //размер мира по x
+	int WORLD_SIZE_Y; //размер мира по y
+
 	//Переменные
-	int ENERGY_GAINED;
-	int BOT_STEP_COST;	
-	int WORLD_SCALE;
-	int BOT_SIZE;
-	int ENT_NUM_SPAWN;
-	int ENERGY_FOR_SPAWN;
-	int BOT_POS_X;
-	int BOT_POS_Y;
-	int WORLD_SIZE_X;
-	int WORLD_SIZE_Y;
-
-	//найти максимальный размер мира с таким разрешением
-
+	int turn; //считает циклы
+	int bot_num; //считает кол-во ботов
+	int ent_num; //считает кол-во сущностей
 	
-	
+	int step_arr[4] = { 1,2,3,4 }; //массив для выбора направления	
+	int ent_spawn_arr[MAX_WORLD_SIZE_X]; //массив для выбора точки спауна сущности
+	int world_arr[MAX_WORLD_SIZE_Y][MAX_WORLD_SIZE_X]; //массив карты мира
 
-	int turn;
-	int bot_num;
-	int ent_num;
-	int cur_bot_id;
-	int cur_ent_id;
-	int step_arr[4] = { 1,2,3,4 };
-	
-	int ent_spawn_arr[MAX_WORLD_SIZE_X];
-	int world_arr[MAX_WORLD_SIZE_Y][MAX_WORLD_SIZE_X];
-	bot_list bot_arr;
-	ent_list ent_arr;
-	Bot* bot_ptr;
-	Entity* ent_ptr;
+	bot_list bot_arr; //список для ботов
+	ent_list ent_arr; //список для сущностей
 
-	sf::Clock main_clock;
-	sf::RenderWindow world_window;
+	sf::Clock main_clock; //главные часы
+	sf::RenderWindow world_window; //главное окно
 };
 
 
@@ -210,7 +205,7 @@ private:
 
 
 
-
+//ДЛЯ КЛАССА СПИСКА СУЩНОСТИ
 Entity* ent_list::xy_find(int x, int y)
 {
 	ent_data* current;
@@ -279,20 +274,6 @@ ent_data* ent_list::find(Entity* ptr)
 	return current;
 }
 
-/*
-ent_data* ent_list::find_prev(Entity* ptr)
-{
-	ent_data* current;
-	current = first;
-
-	while (((current->next)->ent_ptr != ptr) && ((current->next)->next != NULL) && (current->next=NULL))
-	{
-		current = current->next;
-	}
-
-	return current;
-}
-*/
 void ent_list::rm(Entity* ptr) //Переделать во второй раз
 {
 	/*
@@ -356,6 +337,7 @@ void ent_list::rm(Entity* ptr) //Переделать во второй раз
 
 
 
+//ДЛЯ КЛАССА СПИСКА БОТОВ
 bot_list::bot_list()
 {
 	first = NULL;
@@ -401,24 +383,6 @@ bot_data* bot_list::find(Bot* ptr)
 	return current;
 }
 
-/*
-bot_data* bot_list::find_prev(Bot* ptr)
-{
-	bot_data* prev;
-	prev = first;
-
-	if (prev->next != NULL)
-	{
-		while (((prev->next)->bot_ptr != ptr) && ((prev->next)->next != NULL))
-		{
-			prev = prev->next;
-		}
-	}
-	
-	return prev;
-}
-*/
-
 void bot_list::rm(Bot* ptr) //ПРОВЕРИТЬ ДЕСТРУКТОР И НЕ РАБОТАЕТ С УДАЛЕНИЕ ПОСЛЕДНЕГО БОТА
 {
 	bot_data* current;
@@ -456,6 +420,9 @@ void bot_list::rm(Bot* ptr) //ПРОВЕРИТЬ ДЕСТРУКТОР И НЕ РАБОТАЕТ С УДАЛЕНИЕ ПОСЛ
 	}
 }
 
+
+
+//ДЛЯ КЛАССА СУЩНОСТИ
 Entity::Entity(int posx, int posy, int size) : x(posx), y(posy), shape(sf::Vector2f(size, size))
 {
 	shape.setFillColor(sf::Color::Blue);
@@ -466,21 +433,10 @@ void Entity::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	target.draw(shape, states);
 }
 
-Bot::Bot(int a, int b, int s) : x(a), y(b), shape(sf::Vector2f(s, s)), color(0), id(0), energy(50)
-{
 
-	shape.setFillColor(sf::Color::Red);
 
-}
-
-Bot::Bot(int a, int b) : x(a), y(b), shape(sf::Vector2f(2, 2)), color(0), id(0), energy(50)
-{
-
-	shape.setFillColor(sf::Color::Red);
-
-}
-
-Bot::Bot() :  x(0), y(0), shape(sf::Vector2f(2, 2))
+//ДЛЯ КЛАССА БОТОВ
+Bot::Bot(int posx, int posy, int size) : x(posx), y(posy), shape(sf::Vector2f(size, size)), energy(20)
 {
 
 	shape.setFillColor(sf::Color::Red);
@@ -493,7 +449,11 @@ void Bot::draw(sf::RenderTarget& target, sf::RenderStates states) const
 }
 
 
-World::World() : bot_num(0), ent_num(0), cur_bot_id(0), cur_ent_id(0), turn(0), WORLD_SCALE(2), BOT_SIZE(2),
+
+//ДЛЯ КЛАССА МИРА
+
+//КОНСТРУКТОРЫ
+World::World() : bot_num(0), ent_num(0), turn(0), SCREEN_SCALE(2), BOT_SIZE(2),
 ENT_NUM_SPAWN(4), ENERGY_FOR_SPAWN(100), ENERGY_GAINED(10), BOT_STEP_COST(2), BOT_POS_X(150), BOT_POS_Y(78), WORLD_SIZE_X(300), WORLD_SIZE_Y(156),
 world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y)), "The Wooooooorldo!!!")
 {
@@ -529,12 +489,9 @@ world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y))
 
 }
 
-
-
-
 World::World(int sizex, int sizey, int scale, int botsize, int entspawn, int energy_spawn, int energy_gain, int stepcost, int botx, int boty):
 
-bot_num(0), ent_num(0), cur_bot_id(0), cur_ent_id(0), turn(0), WORLD_SCALE(scale), BOT_SIZE(botsize),  ENERGY_FOR_SPAWN(energy_spawn),
+bot_num(0), ent_num(0), turn(0), SCREEN_SCALE(scale), BOT_SIZE(botsize),  ENERGY_FOR_SPAWN(energy_spawn),
 ENERGY_GAINED(energy_gain), BOT_STEP_COST(stepcost), WORLD_SIZE_X(((sizex<MAX_WORLD_SIZE_X)?sizex:MAX_WORLD_SIZE_X)),
 WORLD_SIZE_Y(((sizey<MAX_WORLD_SIZE_Y)?sizey:MAX_WORLD_SIZE_Y)), BOT_POS_X(((botx<WORLD_SIZE_X)?botx:WORLD_SIZE_X)),
 BOT_POS_Y(((boty<WORLD_SIZE_Y)?boty:WORLD_SIZE_Y)), ENT_NUM_SPAWN(((entspawn<WORLD_SIZE_X)?entspawn:WORLD_SIZE_X)),
@@ -559,114 +516,140 @@ world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y))
 	bot_add(BOT_POS_X, BOT_POS_Y);
 }
 
-int World::screen_size(int x)
+
+
+//фУНКЦИИ
+	//проверка на события
+void World::processEvents()
 {
-
-	x = static_cast<int>(x*BOT_SIZE*WORLD_SCALE*1.5);
-
-	return x;
+	sf::Event event;
+	while (world_window.pollEvent(event))
+	{
+		if ((event.type == sf::Event::Closed) or ((event.type == sf::Event::KeyPressed) and (event.key.code == sf::Keyboard::Escape)))
+		{
+			world_window.close();
+		}
+	}
 }
 
-void World::inf_print()
-{
-	std::cout << "Current turn is " << turn << std::endl << "Bot number is " << bot_num << std::endl << "Ent number is " << ent_num << std::endl << std::endl << std::endl;
-}
 
-void World::bot_add(int x, int y)
-{
-	world_arr[y][x] = BOT;
-	bot_arr.add(new Bot(x, y, BOT_SIZE*WORLD_SCALE));
-	bot_num++;
-}
-
-void World::ent_rm(int x, int y)
-{
-	world_arr[y][x] = FREE;
-	ent_arr.rm(ent_arr.xy_find(x, y));
-	ent_num--;
-}
-
-void World::bot_mov(int x, int y, Bot* ptr)
-{
-//	std::cout << "Going to mov to " << x << " " << y << " " << "there are " << world_arr[x][y] << std::endl; //DELETE
 	
-	world_arr[y][x] = BOT;
-	world_arr[ptr->y][ptr->x] = FREE;	
-	ptr->x = x;
-	ptr->y = y;
+	//отрисовка
+void World::render()
+{
+	world_window.clear(sf::Color::White);
+
+	all_bot_draw();
+	all_ent_draw();
+
+	world_window.display();
 }
 
-bool World::ent_check(int x)
+void World::all_bot_draw()
 {
-	if (x == ENT)
+	bot_data* current;
+	current = bot_arr.r_first();
+	bool flag;
+	flag = true;
+	if (current != NULL)
 	{
-		return true;
+		do
+		{
+			if (flag)
+			{
+				flag = false;
+			}
+			else
+			{
+				current = current->next;
+			}
+			(*(current->bot_ptr)).shape.setPosition(int(((*(current->bot_ptr)).x)*BOT_SIZE*SCREEN_SCALE*1.5), int(((*(current->bot_ptr)).y)*BOT_SIZE*SCREEN_SCALE*1.5));
+			world_window.draw(*(current->bot_ptr));
+			//std::cout << current->bot_ptr->x << " " << current->bot_ptr->y << std::endl; //DELETE
+		} while (current->next != NULL);
+	}
+}
+
+void World::all_ent_draw()
+{
+	ent_data* current;
+	current = ent_arr.r_first();
+	bool flag;
+	flag = true;
+
+	if (current != NULL)
+	{
+		do
+		{
+			if (flag)
+			{
+				flag = false;
+			}
+			else
+			{
+				current = current->next;
+			}
+			(*(current->ent_ptr)).shape.setPosition(int(((*(current->ent_ptr)).x)*BOT_SIZE*SCREEN_SCALE)*1.5, int(((*(current->ent_ptr)).y)*BOT_SIZE*SCREEN_SCALE*1.5));
+			//std::cout << current->ent_ptr->x << " " << current->ent_ptr->y << std::endl; //DELETE
+			world_window.draw(*(current->ent_ptr));
+		} while (current->next != NULL);
+	}
+}
+
+
+
+	//обновление логики
+void World::update()
+{
+	entSpawn();
+	entStep();
+
+	botStep(bot_arr.r_first());
+}
+
+void World::botStep(bot_data* current) //НЕ РАБОТАЕТ КОДА НЕТ БОТОВ
+{
+
+	//bot_data* current;
+	//current = bot_arr.r_first();
+	bool flag;
+	flag = true;
+
+	if (current != NULL)
+	{
+		do
+		{
+			if (flag)
+			{
+				current = bot_arr.r_first();
+				flag = false;
+			}
+			else
+			{
+				current = current->next;
+			}
+			//std::cout << '1' << std::endl;
+			botStat(current->bot_ptr);
+
+		} while (current->next != NULL);
+	}
+
+
+	/*if ((current!=NULL)&&(current->next != NULL))
+	{
+	botStep(current->next);
+
 	}
 	else
 	{
-		return false;
+	if (current != NULL)
+	{
+	botStat(current->bot_ptr);
 	}
+
+	}
+	*/
 }
-
-bool World::bot_check(int x)
-{
-	if (x == BOT)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool World::free_check(int x)
-{
-	if (x == FREE)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-void World::arr_shuffle(int arr[], int size, int shuffle)
-{
-
-	srand(static_cast<int>(main_clock.getElapsedTime().asSeconds()));
-
-	for (int i = 0; i < shuffle; i++)
-	{
-		int j, a, b;
-		
-		a = rand() % (size);	
-		b = rand() % (size);
-
-		j = arr[a];
-		arr[a] = arr[b];
-		arr[b] = j;
-	}
-	
-}
-
-int World::pos_check(int x, int y)
-{
-	if (world_arr[y][x] == FREE) 
-	{
-		return FREE;
-	}
-	else if (world_arr[y][x] == BOT)
-	{
-		return BOT;
-	}
-	else if (world_arr[y][x] == ENT)
-	{
-		return ENT;
-	}
-}
-
 
 void World::botStat(Bot* ptr)
 {
@@ -680,7 +663,7 @@ void World::botStat(Bot* ptr)
 
 	//Проверяем бота на жизнеспособность
 	if (ptr->energy <= 0)
-	{	
+	{
 		/*world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
 		bot_arr.rm(ptr);
 		alive = false;
@@ -688,7 +671,7 @@ void World::botStat(Bot* ptr)
 
 		ptr->energy += BOT_STEP_COST;
 	}
-	
+
 
 	if (alive)
 	{
@@ -718,16 +701,16 @@ void World::botStat(Bot* ptr)
 					posx -= 1;
 					if ((posy > WORLD_SIZE_Y - 1) || (posy < 0)) { flag = false; break; }
 					if (posx < 0) { posx = WORLD_SIZE_X - 1; }
-					if (((ent_check(pos_check(posx, posy)))or(free_check(pos_check(posx,posy))))&& flag)
-					{	
+					if (((ent_check(pos_check(posx, posy))) or (free_check(pos_check(posx, posy)))) && flag)
+					{
 						if (ent_check(pos_check(posx, posy)))
 						{
 							ent_rm(posx, posy);
 						}
 						free_pos = true;
 						bot_add(posx, posy);
-					
-						
+
+
 					}
 
 					break;
@@ -796,10 +779,10 @@ void World::botStat(Bot* ptr)
 
 			/*if (!free_pos)
 			{
-				world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
-				bot_arr.rm(ptr);
-				alive = false;
-				std::cout << 'd' << std::endl;
+			world_arr[ptr->y][ptr->x] = 0; //Чистим карту мира от мертвого бота
+			bot_arr.rm(ptr);
+			alive = false;
+			std::cout << 'd' << std::endl;
 			}*/
 
 
@@ -815,9 +798,9 @@ void World::botStat(Bot* ptr)
 	if (alive)
 	{
 
-		
 
-		
+
+
 
 
 
@@ -1005,67 +988,6 @@ void World::botStat(Bot* ptr)
 
 
 	}
-	
-}
-
-void World::botStep(bot_data* current) //НЕ РАБОТАЕТ КОДА НЕТ БОТОВ
-{
-	
-	//bot_data* current;
-	//current = bot_arr.r_first();
-	bool flag;
-	flag = true;
-
-	if (current != NULL)
-	{
-		do
-		{
-			if (flag)
-			{
-				current = bot_arr.r_first();
-				flag = false;
-			}
-			else
-			{
-				current = current->next;
-			}
-			//std::cout << '1' << std::endl;
-				botStat(current->bot_ptr);
-			
-		} while (current->next != NULL);
-	}
-	
-
-	/*if ((current!=NULL)&&(current->next != NULL))
-	{
-		botStep(current->next);
-		
-	}
-	else
-	{	
-		if (current != NULL)
-		{
-			botStat(current->bot_ptr);
-		}
-		
-	}
-	*/
-}
-
-void World::entStat(Entity* ptr)
-{
-	int x, y;
-	x = ptr->x;
-	y = ptr->y;
-	
-		
-	if ((y != WORLD_SIZE_Y-1)&&(free_check(pos_check(x,y+1))))
-	{
-		ptr->y += 1;
-		world_arr[y][x] = FREE;
-		world_arr[y + 1][x] = ENT;
-
-	}
 
 }
 
@@ -1097,13 +1019,30 @@ void World::entStep()
 	}
 }
 
-void World::entAdd()
+void World::entStat(Entity* ptr)
+{
+	int x, y;
+	x = ptr->x;
+	y = ptr->y;
+
+
+	if ((y != WORLD_SIZE_Y - 1) && (free_check(pos_check(x, y + 1))))
+	{
+		ptr->y += 1;
+		world_arr[y][x] = FREE;
+		world_arr[y + 1][x] = ENT;
+
+	}
+
+}
+
+void World::entSpawn()
 {
 
 	//Перемешиваем точки спавна сущности
-	arr_shuffle(ent_spawn_arr, WORLD_SIZE_X, WORLD_SIZE_X*100);
+	arr_shuffle(ent_spawn_arr, WORLD_SIZE_X, WORLD_SIZE_X * 100);
 
-		
+
 	int i;
 	int j;
 	int pos;
@@ -1112,107 +1051,170 @@ void World::entAdd()
 	pos = 0;
 
 	//Проверяем свободные точки для 2 сущностей и спауним их, если таких нет забиваем
-	while((i<WORLD_SIZE_X)&&(j<ENT_NUM_SPAWN))
-	{	
-		i++;		
+	while ((i<WORLD_SIZE_X) && (j<ENT_NUM_SPAWN))
+	{
+		i++;
 		pos = ent_spawn_arr[i];
 
-		if (free_check(pos_check(pos,0)))
+		if (free_check(pos_check(pos, 0)))
 		{
-			ent_arr.add(new Entity(pos, 0 , BOT_SIZE*WORLD_SCALE));
+			ent_arr.add(new Entity(pos, 0, BOT_SIZE*SCREEN_SCALE));
 			world_arr[0][pos] = ENT;
 			j++;
 			ent_num++;
 		}
-		
+
 	}
 
 }
 
-void World::update()
-{
-	entAdd();
-	entStep();
-	
-	
-	botStep(bot_arr.r_first());
-	//std::cout << '3' << std::endl; //DELETE
-		
-		
-}
 
-void World::all_bot_draw()
+
+	//проверка карты мира
+int World::pos_check(int x, int y)
 {
-	bot_data* current;
-	current = bot_arr.r_first();
-	bool flag;
-	flag = true;
-	if (current != NULL)
+	if (world_arr[y][x] == FREE)
 	{
-		do
-		{
-			if (flag)
-			{
-				flag = false;
-			}
-			else
-			{
-				current = current->next;
-			}
-			(*(current->bot_ptr)).shape.setPosition(int(((*(current->bot_ptr)).x)*BOT_SIZE*WORLD_SCALE*1.5), int(((*(current->bot_ptr)).y)*BOT_SIZE*WORLD_SCALE*1.5));
-			world_window.draw(*(current->bot_ptr));
-			//std::cout << current->bot_ptr->x << " " << current->bot_ptr->y << std::endl; //DELETE
-		} while (current->next != NULL);
+		return FREE;
 	}
-}
-
-void World::all_ent_draw()
-{
-	ent_data* current;
-	current = ent_arr.r_first();
-	bool flag;
-	flag = true;
-
-	if (current != NULL)
+	else if (world_arr[y][x] == BOT)
 	{
-		do
-		{
-			if (flag)
-			{
-				flag = false;
-			}
-			else
-			{
-				current = current->next;
-			}
-			(*(current->ent_ptr)).shape.setPosition(int(((*(current->ent_ptr)).x)*BOT_SIZE*WORLD_SCALE)*1.5, int(((*(current->ent_ptr)).y)*BOT_SIZE*WORLD_SCALE*1.5));
-			//std::cout << current->ent_ptr->x << " " << current->ent_ptr->y << std::endl; //DELETE
-			world_window.draw(*(current->ent_ptr));
-		} while (current->next != NULL);
+		return BOT;
 	}
-}
-
-void World::render()
-{
-	world_window.clear(sf::Color::White);
-
-	all_bot_draw();
-	all_ent_draw();
-
-	world_window.display();
-}
-
-void World::processEvents()
-{
-	sf::Event event;
-	while (world_window.pollEvent(event))
+	else if (world_arr[y][x] == ENT)
 	{
-		if ((event.type == sf::Event::Closed) or ((event.type == sf::Event::KeyPressed) and (event.key.code == sf::Keyboard::Escape)))
-		{
-			world_window.close();
-		}
+		return ENT;
 	}
 }
+
+bool World::ent_check(int x)
+{
+	if (x == ENT)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool World::bot_check(int x)
+{
+	if (x == BOT)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool World::free_check(int x)
+{
+	if (x == FREE)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+
+	//взаимодействие с объектами
+void World::bot_mov(int x, int y, Bot* ptr)
+{
+	//	std::cout << "Going to mov to " << x << " " << y << " " << "there are " << world_arr[x][y] << std::endl; //DELETE
+
+	world_arr[y][x] = BOT;
+	world_arr[ptr->y][ptr->x] = FREE;
+	ptr->x = x;
+	ptr->y = y;
+}
+
+void World::ent_rm(int x, int y)
+{
+	world_arr[y][x] = FREE;
+	ent_arr.rm(ent_arr.xy_find(x, y));
+	ent_num--;
+}
+
+void World::bot_add(int x, int y)
+{
+	world_arr[y][x] = BOT;
+	bot_arr.add(new Bot(x, y, BOT_SIZE*SCREEN_SCALE));
+	bot_num++;
+}
+
+
+
+	//добавочные
+void World::arr_shuffle(int arr[], int size, int shuffle)
+{
+
+	srand(static_cast<int>(main_clock.getElapsedTime().asSeconds()));
+
+	for (int i = 0; i < shuffle; i++)
+	{
+		int j, a, b;
+
+		a = rand() % (size);
+		b = rand() % (size);
+
+		j = arr[a];
+		arr[a] = arr[b];
+		arr[b] = j;
+	}
+
+}
+
+int World::screen_size(int x)
+{
+
+	x = static_cast<int>(x*BOT_SIZE*SCREEN_SCALE*1.5);
+
+	return x;
+}
+
+void World::inf_print()
+{
+	std::cout << "Current turn is " << turn << std::endl << "Bot number is " << bot_num << std::endl << "Ent number is " << ent_num << std::endl << std::endl << std::endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void World::run()
 {
@@ -1227,19 +1229,17 @@ void World::run()
 }
 
 
-
+//ОСНОВНАЯ ФУНКЦИЯ
 int main()
 {
-
 	std::cout << std::endl << "Hey!!! My name is Del O'Ner, and it's my small world simulation.\n"
 		<< "The RED scuare is called BOT, it can move up, down, left and right. The BLUE one is its food.\n"
 		<< "BOT can destroy it and gain energy. Also u can change some params of this world.\n"
-		<< "So have fun and good luck... And be carefull it non optimized =)\n";
+		<< "So have fun and good luck... And be carefull it non optimized =)\n";	
 
-	
+	bool repeat;
+	repeat = false;
 
-		bool repeat;
-		repeat = false;
 	while(!repeat)
 	{		
 		
