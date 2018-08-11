@@ -69,7 +69,7 @@ world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y))
 	//ƒобавл€ем первого бота и сущность
 	bot_add(WORLD_SIZE_X / 2, WORLD_SIZE_Y / 2);
 }
-
+//переделать конструктор
 World::World(int sizex, int sizey, int scale, int botsize, int entspawn, int energy_spawn, int energy_gain, int stepcost, int botx, int boty) :	//не работает инициализаци€ с проверкой дл€ количества спауна сущности
 	bot_num(0), ent_num(0), turn(0), SCREEN_SCALE(scale), BOT_SIZE(botsize), ENERGY_FOR_SPAWN(energy_spawn),
 	ENERGY_GAINED(energy_gain), BOT_STEP_COST(stepcost), WORLD_SIZE_X(((sizex<MAX_WORLD_SIZE_X) ? sizex : MAX_WORLD_SIZE_X)),

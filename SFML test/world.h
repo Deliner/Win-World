@@ -89,8 +89,8 @@ private:
 	static const int ENT = 2; //Как отображать сущность на карте 
 	static const int FREE = 0; //Как отображать свободу на карте
 
-	static const int MAX_WORLD_SIZE_X = 316; //максимальный рамер экрана по горизонтали
-	static const int MAX_WORLD_SIZE_Y = 176; //максимальный размер экрана по вертикали
+	static const int MAX_WORLD_SIZE_X = 1024; //максимальный рамер экрана по горизонтали
+	static const int MAX_WORLD_SIZE_Y = 512; //максимальный размер экрана по вертикали
 
 											 //Переменные(константы), для задания пользователем
 	int ENERGY_GAINED; //сколько получать энергии за сущность
