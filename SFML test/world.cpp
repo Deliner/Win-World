@@ -73,8 +73,8 @@ world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y))
 World::World(int sizex, int sizey, int scale, int botsize, int entspawn, int energy_spawn, int energy_gain, int stepcost, int botx, int boty) :	//не работает инициализация с проверкой для количества спауна сущности
 	bot_num(0), ent_num(0), turn(0), SCREEN_SCALE(scale), BOT_SIZE(botsize), ENERGY_FOR_SPAWN(energy_spawn),
 	ENERGY_GAINED(energy_gain), BOT_STEP_COST(stepcost), WORLD_SIZE_X(((sizex<MAX_WORLD_SIZE_X) ? sizex : MAX_WORLD_SIZE_X)),
-	WORLD_SIZE_Y(((sizey<MAX_WORLD_SIZE_Y) ? sizey : MAX_WORLD_SIZE_Y)), BOT_POS_X(((botx<WORLD_SIZE_X) ? botx : WORLD_SIZE_X)),
-	BOT_POS_Y(((boty<WORLD_SIZE_Y) ? boty : WORLD_SIZE_Y)), /*ENT_NUM_SPAWN(((entspawn<WORLD_SIZE_X) ? entspawn : WORLD_SIZE_X))*/ENT_NUM_SPAWN(entspawn),
+	WORLD_SIZE_Y(((sizey<MAX_WORLD_SIZE_Y) ? sizey : MAX_WORLD_SIZE_Y)),/*BOT_POS_X(((botx<WORLD_SIZE_X) ? botx : WORLD_SIZE_X))*/ BOT_POS_X(botx),
+	/*BOT_POS_Y(((boty<WORLD_SIZE_Y) ? boty : WORLD_SIZE_Y))*/BOT_POS_Y(boty), /*ENT_NUM_SPAWN(((entspawn<WORLD_SIZE_X) ? entspawn : WORLD_SIZE_X))*/ENT_NUM_SPAWN(entspawn),
 	world_window(sf::VideoMode(screen_size(WORLD_SIZE_X), screen_size(WORLD_SIZE_Y)), "The Wooooooorldo!!!")
 {
 	//Инициализация пустой карты мира
